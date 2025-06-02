@@ -1,10 +1,13 @@
 # attention_utils.py
+import sys
+import os # Thêm os để kiểm tra file
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from configs import *   # Import các cấu hình từ file configs.pys
 import torch
 import torch.nn.functional as F
-import configs.configs as configs
-from .grad_cam import GradCAM # Import lớp GradCAM vừa tạo
+from grad_cam import GradCAM # Import lớp GradCAM vừa tạo
 import models.cnn_model as cnn_model # Để load model
-import configs.utils as utils # Để load checkpoint
+import configs.utils as utils # Để load checkpoint và visualize
 import matplotlib.pyplot as plt
 import numpy as np
 import prepare_data.data_loader # Để lấy dữ liệu mẫu
@@ -88,69 +91,69 @@ def create_prompt_from_image(image_tensor_batch, model_prompt_generator, target_
                                               normalized_heatmap_batch)
     return lesion_prompt_batch, normalized_heatmap_batch
 
-# Ví dụ cách sử dụng (trong một file script riêng, ví dụ: generate_prompts_example.py)
-# if __name__ == "__main__":
-#     # 1. Load model đã tiền huấn luyện
-#     print("Loading pre-trained model...")
-#     model = cnn_model.get_cnn_model().to(configs.DEVICE)
-#     try:
-#         utils.load_checkpoint(configs.MODEL_SAVE_PATH, model)
-#     except FileNotFoundError:
-#         print(f"ERROR: Pre-trained model not found at {configs.MODEL_SAVE_PATH}")
-#         print("Please run pretrain_cnn.py first.")
-#         exit()
-#     model.eval()
+#Ví dụ cách sử dụng (trong một file script riêng, ví dụ: generate_prompts_example.py)
+if __name__ == "__main__":
+    # 1. Load model đã tiền huấn luyện
+    print("Loading pre-trained model...")
+    model = cnn_model.get_cnn_model().to(configs.DEVICE)
+    try:
+        utils.load_checkpoint(configs.MODEL_SAVE_PATH, model)
+    except FileNotFoundError:
+        print(f"ERROR: Pre-trained model not found at {configs.MODEL_SAVE_PATH}")
+        print("Please run pretrain_cnn.py first.")
+        exit()
+    model.eval()
 
-#     # 2. Lấy một batch dữ liệu mẫu (ví dụ từ validation loader)
-#     print("Loading sample data...")
-#     _, val_loader = prepare_data.data_loader.get_dataloaders(
-#         configs.LABEL_FILE,
-#         configs.TRAIN_IMG_DIR,
-#         configs.BATCH_SIZE,
-#         configs.VALID_SPLIT,
-#         configs.IMG_SIZE,
-#         configs.NUM_WORKERS
-#     )
-#     sample_batch = next(iter(val_loader))
-#     images, labels = sample_batch
-#     if images is None or images.nelement() == 0:
-#          print("Could not load sample batch.")
-#          exit()
+    # 2. Lấy một batch dữ liệu mẫu (ví dụ từ validation loader)
+    print("Loading sample data...")
+    _, val_loader = prepare_data.data_loader.get_dataloaders(
+        configs.LABEL_FILE,
+        configs.TRAIN_IMG_DIR,
+        configs.BATCH_SIZE,
+        configs.VALID_SPLIT,
+        configs.IMG_SIZE,
+        configs.NUM_WORKERS
+    )
+    sample_batch = next(iter(val_loader))
+    images, labels = sample_batch
+    if images is None or images.nelement() == 0:
+         print("Could not load sample batch.")
+         exit()
 
-#     # Chọn 1 ảnh từ batch để demo
-#     image_to_process = images[3].unsqueeze(0) # Lấy ảnh đầu tiên và giữ nguyên batch dim [1, C, H, W]
-#     print(f"Processing image with shape: {image_to_process.shape}")
+    # Chọn 1 ảnh từ batch để demo
+    image_to_process = images[3].unsqueeze(0) # Lấy ảnh đầu tiên và giữ nguyên batch dim [1, C, H, W]
+    print(f"Processing image with shape: {image_to_process.shape}")
 
-#     # 3. Tạo Lesion Prompt
-#     print("Generating Lesion Prompt...")
-#     lesion_prompt, normalized_heatmap = create_prompt_from_image(
-#         image_to_process,
-#         model,
-#         configs.TARGET_LAYER_NAME,
-#         configs.DEVICE
-#     )
-#     print(f"Generated Lesion Prompt shape: {lesion_prompt.shape}")
-#     print(f"Generated Normalized Heatmap shape: {normalized_heatmap.shape}")
+    # 3. Tạo Lesion Prompt
+    print("Generating Lesion Prompt...")
+    lesion_prompt, normalized_heatmap = create_prompt_from_image(
+        image_to_process,
+        model,
+        configs.TARGET_LAYER_NAME,
+        configs.DEVICE
+    )
+    print(f"Generated Lesion Prompt shape: {lesion_prompt.shape}")
+    print(f"Generated Normalized Heatmap shape: {normalized_heatmap.shape}")
 
-#     # 4. Visualize kết quả cho ảnh đầu tiên trong batch demo
-#     print("Visualizing results...")
-#     # Lấy ảnh gốc (cần un-normalize) và heatmap/prompt từ batch size 1
-#     original_image_to_vis = image_to_process[0] # Shape [C, H, W]
-#     heatmap_to_vis = normalized_heatmap[0]    # Shape [H, W]
-#     prompt_to_vis = lesion_prompt[0]          # Shape [C, H, W]
+    # 4. Visualize kết quả cho ảnh đầu tiên trong batch demo
+    print("Visualizing results...")
+    # Lấy ảnh gốc (cần un-normalize) và heatmap/prompt từ batch size 1
+    original_image_to_vis = image_to_process[0] # Shape [C, H, W]
+    heatmap_to_vis = normalized_heatmap[0]    # Shape [H, W]
+    prompt_to_vis = lesion_prompt[0]          # Shape [C, H, W]
 
-#     # Hiển thị heatmap chồng lên ảnh gốc
-#     utils.visualize_heatmap(original_image_to_vis, heatmap_to_vis)
+    # Hiển thị heatmap chồng lên ảnh gốc
+    utils.visualize_heatmap(original_image_to_vis, heatmap_to_vis)
 
-#     # Hiển thị Lesion Prompt (cũng cần un-normalize nếu muốn xem màu sắc đúng)
-#     prompt_display = prompt_to_vis.cpu().permute(1, 2, 0).detach().numpy()
-#     mean = np.array([0.485, 0.456, 0.406])
-#     std = np.array([0.229, 0.224, 0.225])
-#     prompt_display = std * prompt_display + mean # Có thể không cần un-normalize prompt
-#     prompt_display = np.clip(prompt_display, 0, 1)
+    # Hiển thị Lesion Prompt (cũng cần un-normalize nếu muốn xem màu sắc đúng)
+    prompt_display = prompt_to_vis.cpu().permute(1, 2, 0).detach().numpy()
+    mean = np.array([0.485, 0.456, 0.406])
+    std = np.array([0.229, 0.224, 0.225])
+    prompt_display = std * prompt_display + mean # Có thể không cần un-normalize prompt
+    prompt_display = np.clip(prompt_display, 0, 1)
 
-#     plt.figure()
-#     plt.imshow(prompt_display)
-#     plt.title('Generated Lesion Prompt')
-#     plt.axis('off')
-#     plt.show()
+    plt.figure()
+    plt.imshow(prompt_display)
+    plt.title('Generated Lesion Prompt')
+    plt.axis('off')
+    plt.show()
