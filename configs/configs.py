@@ -6,7 +6,7 @@ DATA_DIR = 'E:\\EYEPACS'
 TRAIN_IMG_DIR = DATA_DIR + '\\train\\'
 TEST_IMG_DIR = DATA_DIR + '\\test\\'
 LABEL_FILE = DATA_DIR + '\\trainLabels_cleaned.csv'
-MODEL_SAVE_PATH = 'models_weight\\pretrained_efficientnet_latest_best.pth.tar'
+MODEL_SAVE_PATH = 'models_weight\\pretrained_efficientnet_latest.pth'
 
 # Data parameters
 IMG_SIZE = 224 # Kích thước ảnh đầu vào cho EfficientNet (có thể thay đổi)  

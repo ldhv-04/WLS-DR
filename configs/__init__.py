@@ -1,3 +1,8 @@
+from .utils import (
+    save_checkpoint,
+    load_checkpoint,
+    visualize_heatmap,
+)
 from .configs import MODEL_SAVE_PATH, CNN_MODEL_NAME, TARGET_LAYER_NAME # Và các biến khác bạn muốn "expose"
 from . import configs as settings
 from .configs import (
